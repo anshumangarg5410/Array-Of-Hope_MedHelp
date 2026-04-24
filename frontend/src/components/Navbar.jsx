@@ -15,6 +15,12 @@ export default function Navbar() {
         <nav className="hidden items-center gap-6 lg:flex">
           <a
             className="text-sm text-slate-600 transition hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+            href="/"
+          >
+            Home
+          </a>
+          <a
+            className="text-sm text-slate-600 transition hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
             href="/#features"
           >
             Features

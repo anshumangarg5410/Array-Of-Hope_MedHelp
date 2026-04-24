@@ -76,7 +76,12 @@ export default function FloatingChatbot() {
         onClick={() => setOpen((current) => !current)}
         aria-label="Open chatbot"
       >
-        AI
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-7 w-7">
+          <path
+            d="M12 3.5 13.35 8a4 4 0 0 0 2.65 2.65L20.5 12 16 13.35A4 4 0 0 0 13.35 16L12 20.5 10.65 16A4 4 0 0 0 8 13.35L3.5 12 8 10.65A4 4 0 0 0 10.65 8L12 3.5Zm6-1 0.55 1.85a2 2 0 0 0 1.1 1.1L21.5 6l-1.85.55a2 2 0 0 0-1.1 1.1L18 9.5l-.55-1.85a2 2 0 0 0-1.1-1.1L14.5 6l1.85-.55a2 2 0 0 0 1.1-1.1L18 2.5Z"
+            fill="currentColor"
+          />
+        </svg>
       </Button>
     </div>
   );

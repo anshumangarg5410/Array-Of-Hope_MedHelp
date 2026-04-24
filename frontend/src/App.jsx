@@ -56,9 +56,15 @@ function ScrollToTop() {
   const location = useLocation();
 
   useEffect(() => {
-    if (!location.hash) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    if (location.hash) {
+      const targetId = decodeURIComponent(location.hash.slice(1));
+      window.requestAnimationFrame(() => {
+        document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      return;
     }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [location]);
 
   return null;
