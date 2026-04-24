@@ -1,0 +1,16 @@
+const express = require('express');
+const router = express.Router();
+const Doctor = require('../models/Doctor');
+
+// @route   GET /api/doctors
+// @desc    Get all doctors
+router.get('/', async (req, res) => {
+  try {
+    const doctors = await Doctor.find({});
+    res.json(doctors);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching doctors', error: error.message });
+  }
+});
+
+module.exports = router;
