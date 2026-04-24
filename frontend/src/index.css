@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #0f172a;
+  background:
+    radial-gradient(circle at top left, rgba(191, 219, 254, 0.78), transparent 28%),
+    radial-gradient(circle at top right, rgba(196, 181, 253, 0.52), transparent 26%),
+    linear-gradient(180deg, #f7fbff 0%, #eef4ff 50%, #f5fbf8 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dark:root,
+.dark body {
+  background:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 26%),
+    radial-gradient(circle at top right, rgba(129, 140, 248, 0.14), transparent 22%),
+    linear-gradient(180deg, #08111f 0%, #0b1328 48%, #071119 100%);
+  color: #e2e8f0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  font-family: "Satoshi", "Inter", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(125, 211, 252, 0.35);
+}
+
+@layer components {
+  .glass-panel {
+    @apply border border-white/40 bg-white/55 shadow-soft backdrop-blur-xl dark:border-white/10 dark:bg-white/5;
+  }
+
+  .section-shell {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-sky-500 via-indigo-500 to-emerald-400 bg-clip-text text-transparent;
+  }
+
+  .grid-auto-fit {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+}
