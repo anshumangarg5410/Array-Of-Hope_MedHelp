@@ -1,9 +1,11 @@
 export const storageKeys = {
-  session: "mic-session",
-  theme: "mic-theme",
-  upload: "mic-upload",
-  aiChat: "mic-ai-chat",
-  doctorChat: "mic-doctor-chat",
+  session: "medhelp_session",
+  theme: "medhelp_theme",
+  token: "medhelp_token",
+  userId: "medhelp_userId",
+  upload: "medhelp_upload",
+  aiChat: "medhelp_ai_chat",
+  doctorChat: "medhelp_doctor_chat",
   patientPortalChat: "mic-patient-portal-chat",
   healthProfile: "mic-health-profile",
 };

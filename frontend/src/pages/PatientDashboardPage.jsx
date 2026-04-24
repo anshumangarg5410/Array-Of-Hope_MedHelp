@@ -1,21 +1,24 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import ChatBox from "../components/ChatBox";
 import Card from "../components/Card";
 import Button from "../components/Button";
 import SectionHeading from "../components/SectionHeading";
 import Modal from "../components/Modal";
 import { useAppContext } from "../utils/AppContext";
-import { patientStats, personalizationSuggestions } from "../utils/mockData";
+import { api } from "../services/api";
 
 export default function PatientDashboardPage() {
   const {
     session,
     uploadState,
-    healthProfile,
     addManualPrescription,
     patientPortalMessages,
     sendPatientPortalMessage,
   } = useAppContext();
+
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   const [doseTab, setDoseTab] = useState("adults");
   const [gender, setGender] = useState("women");
   const [open, setOpen] = useState(false);
@@ -26,10 +29,39 @@ export default function PatientDashboardPage() {
     medicines: "",
   });
 
-  const suggestions = useMemo(
-    () => personalizationSuggestions[doseTab][gender],
-    [doseTab, gender],
-  );
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const data = await api.getProfile();
+        setProfile(data);
+        
+        // Auto-set the doseTab based on actual data
+        if (data.ageCategory === "Child") setDoseTab("kids");
+        if (data.ageCategory === "Adult") setDoseTab("adults");
+        if (data.ageCategory === "Geriatric") setDoseTab("geriatric");
+
+        if (data.sex === "Male") setGender("men");
+        if (data.sex === "Female") setGender("women");
+        
+      } catch (err) {
+        console.error("Failed to fetch profile:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (session.isAuthenticated) {
+      fetchProfile();
+    }
+  }, [session.isAuthenticated]);
+
+  // Fallback suggestions if we want to keep them dynamic
+  const suggestions = useMemo(() => {
+    const defaultSuggestions = [
+      "Keep an updated list of your active medications and current diseases.",
+      "Always check for drug interactions when adding new prescriptions.",
+    ];
+    return defaultSuggestions;
+  }, []);
 
   const handleManualPrescriptionSubmit = (event) => {
     event.preventDefault();
@@ -41,6 +73,29 @@ export default function PatientDashboardPage() {
     setPrescriptionModalOpen(false);
   };
 
+  if (loading) {
+    return <div className="p-8 text-slate-500">Loading your health dashboard...</div>;
+  }
+
+  if (!profile) {
+    return <div className="p-8 text-rose-500">Failed to load profile. Please log in again.</div>;
+  }
+
+  // Dynamic calculations
+  const activePrescriptionsCount = profile.prescriptions?.length || 0;
+  const flaggedCombinationsCount = profile.aiHistory?.filter(h => h.riskLevel === 'High').length || 0;
+  
+  // Calculate a mock wellness score: start at 100, subtract for severe diseases or high risk
+  const severeDiseases = profile.currentDiseases?.filter(d => d.severity === 'Severe').length || 0;
+  const wellnessScore = Math.max(0, 100 - (severeDiseases * 5) - (flaggedCombinationsCount * 10));
+
+  const patientStats = [
+    { label: "Active prescriptions", value: activePrescriptionsCount },
+    { label: "Flagged combinations", value: flaggedCombinationsCount },
+    { label: "Doctor responses", value: 0 }, // Placeholder since Doctor portal isn't built
+    { label: "Wellness score", value: `${wellnessScore}%` },
+  ];
+
   return (
     <div className="space-y-6">
       <Card className="overflow-hidden p-8">
@@ -48,7 +103,7 @@ export default function PatientDashboardPage() {
           <div>
             <SectionHeading
               eyebrow="Patient dashboard"
-              title={`Welcome back, ${session.name || "Patient"}`}
+              title={`Welcome back, ${profile.name || "Patient"}`}
               body="Stay on top of medication safety with OCR uploads, interaction alerts, timeline tracking, and personalized health support."
             />
             <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -66,9 +121,15 @@ export default function PatientDashboardPage() {
               Last checked {uploadState.lastCheckedAt}
             </h3>
             <div className="mt-5 space-y-3">
-              <div className="rounded-2xl bg-rose-50/80 p-4 text-sm text-rose-900 dark:bg-rose-400/10 dark:text-rose-100">
-                Severe interaction present. Review with your doctor before taking both medicines.
-              </div>
+              {uploadState.interactions && !uploadState.interactions.isSafe ? (
+                <div className="rounded-2xl bg-rose-50/80 p-4 text-sm text-rose-900 dark:bg-rose-400/10 dark:text-rose-100">
+                  {uploadState.interactions.explanation || "Severe interaction present. Review with your doctor before taking both medicines."}
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-green-50/80 p-4 text-sm text-green-900 dark:bg-green-400/10 dark:text-green-100">
+                  Your recent prescription looks safe! No negative interactions found.
+                </div>
+              )}
               <div className="rounded-2xl bg-white/70 p-4 text-sm text-slate-600 dark:bg-white/5 dark:text-slate-300">
                 Suggested next step: add another prescription, re-check the upload flow, or continue the doctor conversation.
               </div>
@@ -125,37 +186,46 @@ export default function PatientDashboardPage() {
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {suggestions.map((item) => (
-              <Card key={item} className="rounded-[1.75rem] p-5">
+            {suggestions.map((item, index) => (
+              <Card key={index} className="rounded-[1.75rem] p-5">
                 <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">{item}</p>
               </Card>
             ))}
             <Card className="rounded-[1.75rem] p-5">
-              <h4 className="text-lg font-semibold text-slate-950 dark:text-white">Extra modules</h4>
+              <h4 className="text-lg font-semibold text-slate-950 dark:text-white">Health Profile Info</h4>
               <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                Period Tracker and Sex Awareness panels can be expanded later with secure, consent-based workflows.
+                Blood Group: {profile.bloodGroup || "Not specified"}<br/>
+                Allergies: {profile.allergies?.length > 0 ? profile.allergies.join(", ") : "None"}<br/>
               </p>
             </Card>
           </div>
         </Card>
 
         <Card className="p-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Extracted medicines</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Ongoing Medicines</p>
           <div className="mt-5 space-y-3">
-            {uploadState.extracted.map((medicine) => (
-              <div
-                key={`${medicine.name}-${medicine.dose}`}
-                className="flex flex-col justify-between gap-3 rounded-[1.5rem] bg-white/70 p-4 dark:bg-white/5 sm:flex-row sm:items-center"
-              >
-                <div>
-                  <h4 className="font-semibold text-slate-950 dark:text-white">{medicine.name}</h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">{medicine.schedule}</p>
+            {profile.currentMedications && profile.currentMedications.length > 0 ? (
+              profile.currentMedications.map((medicine, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col justify-between gap-3 rounded-[1.5rem] bg-white/70 p-4 dark:bg-white/5 sm:flex-row sm:items-center"
+                >
+                  <div>
+                    <h4 className="font-semibold text-slate-950 dark:text-white">{medicine.medicineName || medicine}</h4>
+                    {medicine.frequency && <p className="text-sm text-slate-500 dark:text-slate-400">{medicine.frequency}</p>}
+                  </div>
+                  {medicine.dosage && (
+                    <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700 dark:bg-sky-400/10 dark:text-sky-200">
+                      {medicine.dosage}
+                    </span>
+                  )}
                 </div>
-                <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700 dark:bg-sky-400/10 dark:text-sky-200">
-                  {medicine.dose}
-                </span>
+              ))
+            ) : (
+              <div className="rounded-[1.5rem] bg-white/70 p-4 dark:bg-white/5 text-sm text-slate-500">
+                No active medications found in your profile.
               </div>
-            ))}
+            )}
           </div>
         </Card>
       </div>
@@ -166,7 +236,7 @@ export default function PatientDashboardPage() {
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">My Health Data</p>
               <h3 className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-white">
-                Past prescriptions and ongoing medicines
+                Past prescriptions and ongoing diseases
               </h3>
             </div>
             <Button variant="secondary" onClick={() => setPrescriptionModalOpen(true)}>
@@ -177,40 +247,48 @@ export default function PatientDashboardPage() {
           <div className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-3">
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Past Prescriptions</p>
-              {healthProfile.pastPrescriptions.map((prescription) => (
-                <div key={prescription.id} className="rounded-[1.5rem] bg-white/70 p-4 dark:bg-white/5">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h4 className="font-semibold text-slate-950 dark:text-white">{prescription.title}</h4>
-                    <span className="text-xs text-slate-400">{prescription.date}</span>
+              {profile.prescriptions && profile.prescriptions.length > 0 ? (
+                profile.prescriptions.map((prescription, idx) => (
+                  <div key={idx} className="rounded-[1.5rem] bg-white/70 p-4 dark:bg-white/5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h4 className="font-semibold text-slate-950 dark:text-white">{prescription.diagnosis || "General Visit"}</h4>
+                      <span className="text-xs text-slate-400">{new Date(prescription.issuedDate).toLocaleDateString()}</span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {prescription.medications?.map((item, mIdx) => (
+                        <span
+                          key={mIdx}
+                          className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600 dark:bg-white/10 dark:text-slate-300"
+                        >
+                          {item.medicineName || item}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {prescription.items.map((item) => (
-                      <span
-                        key={`${prescription.id}-${item}`}
-                        className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600 dark:bg-white/10 dark:text-slate-300"
-                      >
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-slate-400">No prescriptions added yet.</p>
+              )}
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Ongoing Medicines</p>
-              {healthProfile.ongoingMedicines.map((medicine) => (
-                <div
-                  key={medicine}
-                  className="flex items-center justify-between rounded-[1.5rem] bg-white/70 px-4 py-3 text-sm text-slate-700 dark:bg-white/5 dark:text-slate-200"
-                >
-                  <span>{medicine}</span>
-                  <span className="text-xs text-emerald-500">Active</span>
-                </div>
-              ))}
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Current Diseases</p>
+              {profile.currentDiseases && profile.currentDiseases.length > 0 ? (
+                profile.currentDiseases.map((disease, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between rounded-[1.5rem] bg-white/70 px-4 py-3 text-sm text-slate-700 dark:bg-white/5 dark:text-slate-200"
+                  >
+                    <span>{disease.diseaseName || disease}</span>
+                    <span className="text-xs text-emerald-500">Ongoing</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-400">No active diseases recorded.</p>
+              )}
+              
               <div className="rounded-[1.5rem] bg-sky-50/80 p-4 text-sm text-sky-900 dark:bg-sky-400/10 dark:text-sky-100">
-                Age: {session.age || healthProfile.age} • Past diseases:{" "}
-                {session.pastDiseases?.join(", ") || healthProfile.pastDiseases.join(", ")}
+                Age: {profile.age || "Not specified"} • Sex: {profile.sex || "Not specified"}
               </div>
             </div>
           </div>
@@ -227,7 +305,7 @@ export default function PatientDashboardPage() {
 
       <Modal open={open} onClose={() => setOpen(false)} title="Care summary">
         <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">
-          You currently have one severe interaction, one moderate interaction, and one safe pairing in your recent report. The recommended flow is to review the upload, avoid the severe combination, and continue the doctor conversation for a medication alternative.
+          This feature will dynamically summarize your past health reports once the full AI pipeline is integrated. Stay tuned!
         </p>
       </Modal>
 

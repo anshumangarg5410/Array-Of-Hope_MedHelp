@@ -11,6 +11,7 @@ import {
   patientPortalMessages,
 } from "./mockData";
 import { readStorage, storageKeys, writeStorage } from "./storage";
+import { api } from "../services/api";
 
 const AppContext = createContext(null);
 
@@ -29,6 +30,7 @@ export function AppProvider({ children }) {
       isAuthenticated: false,
       name: "",
       email: "",
+      userId: readStorage(storageKeys.userId, null),
     }),
   );
   const [uploadState, setUploadState] = useState(() =>
@@ -80,54 +82,48 @@ export function AppProvider({ children }) {
     writeStorage(storageKeys.healthProfile, healthProfile);
   }, [healthProfile]);
 
-  const login = ({ role, name, email, age, pastDiseases, ongoingMedicines }) => {
+  const login = ({ role, name, email, userId }) => {
+    writeStorage(storageKeys.userId, userId);
     setSession({
       role,
-      name: name || (role === "doctor" ? "Dr. Alex Morgan" : "Ria Patel"),
+      name,
       email,
-      age: age || defaultHealthProfile.age,
-      pastDiseases: pastDiseases || defaultHealthProfile.pastDiseases,
-      ongoingMedicines: ongoingMedicines || defaultHealthProfile.ongoingMedicines,
+      userId,
       isAuthenticated: true,
     });
-
-    if (role === "patient") {
-      setHealthProfile((current) => ({
-        ...current,
-        age: age || current.age,
-        pastDiseases: pastDiseases?.length ? pastDiseases : current.pastDiseases,
-        ongoingMedicines: ongoingMedicines?.length ? ongoingMedicines : current.ongoingMedicines,
-      }));
-    }
   };
 
   const logout = () => {
+    writeStorage(storageKeys.token, null);
+    writeStorage(storageKeys.userId, null);
     setSession({
       role: null,
       isAuthenticated: false,
       name: "",
       email: "",
+      userId: null,
     });
   };
 
   const toggleTheme = () => setTheme((current) => (current === "light" ? "dark" : "light"));
 
   const processUpload = async ({ file, image }) => {
-    const extracted = await simulatePrescriptionProcessing(file);
-    const checkedInteractions = await simulateInteractionCheck(extracted);
-
-    setUploadState({
-      image,
-      fileName: file?.name || "prescription.png",
-      extracted,
-      interactions: checkedInteractions,
-      lastCheckedAt: makeTimeLabel(),
-    });
-
-    return {
-      extracted,
-      interactions: checkedInteractions,
-    };
+    if (!session.userId) throw new Error("User must be logged in to check prescriptions");
+    
+    try {
+      const result = await api.checkPrescription(session.userId);
+      setUploadState({
+        image,
+        fileName: file?.name || "prescription.pdf",
+        extracted: [], // Using demo prescription internally right now
+        interactions: result,
+        lastCheckedAt: makeTimeLabel(),
+      });
+      return { interactions: result };
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   };
 
   const sendAiMessage = async (message) => {

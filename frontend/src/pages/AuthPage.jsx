@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import Button from "../components/Button";
 import Card from "../components/Card";
 import { useAppContext } from "../utils/AppContext";
+import { api } from "../services/api";
+import { writeStorage, storageKeys } from "../utils/storage";
 
 export default function AuthPage() {
   const { mode } = useParams();
@@ -11,77 +13,101 @@ export default function AuthPage() {
   const isSignup = mode === "signup";
   const { login } = useAppContext();
   const navigate = useNavigate();
+  
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+
   const [form, setForm] = useState({
-    name: role === "doctor" ? "Dr. Alex Morgan" : "Ria Patel",
-    email: role === "doctor" ? "doctor@careflow.ai" : "patient@careflow.ai",
+    name: "",
+    email: "",
     password: "",
     age: "",
-    pastDiseases: "",
-    ongoingMedicines: "",
+    sex: "Male",
+    phone: "",
+    bloodGroup: "A+",
+    allergies: "",
+    currentDiseases: "",
+    currentMedications: "",
   });
   const [errors, setErrors] = useState({});
 
   const pageCopy = useMemo(
     () => ({
-      title: isSignup ? "Create your secure workspace" : "Welcome back to medication safety",
+      title: isSignup ? (step === 1 ? "Create your secure workspace" : "Medical Profile") : "Welcome back to medication safety",
       body: isSignup
-        ? "Set up your MedHelp account and continue to the live product demo."
+        ? (step === 1 ? "Set up your MedHelp account." : "Add your medical history to enable AI safety checks.")
         : "Sign in to access your dashboard, prescription workflows, and messaging tools.",
     }),
-    [isSignup],
+    [isSignup, step],
   );
 
-  const handleSubmit = (event) => {
+  const handleNextStep = (event) => {
     event.preventDefault();
     const nextErrors = {};
 
-    if (!form.email.trim()) {
-      nextErrors.email = "Email is required.";
-    }
+    if (!form.email.trim()) nextErrors.email = "Email is required.";
+    if (!form.password.trim()) nextErrors.password = "Password is required.";
+    if (!form.name.trim()) nextErrors.name = "Name is required.";
+    if (!form.age || Number(form.age) <= 0) nextErrors.age = "Valid age is required.";
 
-    if (!form.password.trim()) {
-      nextErrors.password = "Password is required.";
-    }
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
+    
+    setStep(2);
+  };
 
-    if (isSignup) {
-      if (!form.name.trim()) {
-        nextErrors.name = "Name is required.";
-      }
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const nextErrors = {};
+    setAuthError("");
 
-      if (!form.age || Number(form.age) <= 0) {
-        nextErrors.age = "Age must be a valid number.";
-      }
-
-      if (!form.pastDiseases.trim()) {
-        nextErrors.pastDiseases = "Add past diseases or write None.";
-      }
-
-      if (!form.ongoingMedicines.trim()) {
-        nextErrors.ongoingMedicines = "Add ongoing medicines or write None.";
-      }
+    if (!isSignup) {
+      if (!form.email.trim()) nextErrors.email = "Email is required.";
+      if (!form.password.trim()) nextErrors.password = "Password is required.";
     }
 
     setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
 
-    if (Object.keys(nextErrors).length) {
-      return;
+    setLoading(true);
+    
+    try {
+      if (isSignup) {
+        // Register flow
+        const payload = {
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          age: Number(form.age),
+          sex: form.sex,
+          phone: form.phone,
+          bloodGroup: form.bloodGroup,
+          allergies: form.allergies.split(",").map(i => i.trim()).filter(Boolean),
+          currentDiseases: form.currentDiseases.split(",").map(i => i.trim()).filter(Boolean),
+          currentMedications: form.currentMedications.split(",").map(i => i.trim()).filter(Boolean),
+        };
+        
+        await api.register(payload);
+        
+        // Auto-login after register
+        const loginData = await api.login({ email: form.email, password: form.password });
+        writeStorage(storageKeys.token, loginData.token);
+        login({ role, name: loginData.user.name, email: loginData.user.email, userId: loginData.user._id });
+        navigate(role === "doctor" ? "/doctor/dashboard" : "/patient/dashboard");
+        
+      } else {
+        // Login flow
+        const loginData = await api.login({ email: form.email, password: form.password });
+        writeStorage(storageKeys.token, loginData.token);
+        login({ role, name: loginData.user.name, email: loginData.user.email, userId: loginData.user._id });
+        navigate(role === "doctor" ? "/doctor/dashboard" : "/patient/dashboard");
+      }
+    } catch (err) {
+      setAuthError(err.message || "An error occurred");
+    } finally {
+      setLoading(false);
     }
-
-    login({
-      role,
-      name: form.name,
-      email: form.email,
-      age: Number(form.age) || undefined,
-      pastDiseases: form.pastDiseases
-        .split("\n")
-        .map((item) => item.trim())
-        .filter(Boolean),
-      ongoingMedicines: form.ongoingMedicines
-        .split("\n")
-        .map((item) => item.trim())
-        .filter(Boolean),
-    });
-    navigate(role === "doctor" ? "/doctor/dashboard" : "/patient/dashboard");
   };
 
   return (
@@ -94,104 +120,159 @@ export default function AuthPage() {
           {pageCopy.title}
         </h1>
         <p className="mt-5 text-lg leading-8 text-slate-600 dark:text-slate-300">{pageCopy.body}</p>
-        <div className="mt-8 grid gap-3 sm:grid-cols-3">
-          {["Role aware flows", "Mock local persistence", "Responsive glassmorphism UI"].map((item) => (
-            <Card key={item} className="rounded-[1.75rem] p-4 text-sm text-slate-600 dark:text-slate-300">
-              {item}
-            </Card>
-          ))}
-        </div>
       </div>
 
       <Card className="mx-auto w-full max-w-xl rounded-[2rem] p-8">
-        <form className="space-y-5" onSubmit={handleSubmit}>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Selected role</label>
-            <div className="glass-panel rounded-2xl px-4 py-4 text-sm capitalize text-slate-700 dark:text-slate-200">
-              {role}
-            </div>
+        {authError && (
+          <div className="mb-4 rounded-lg bg-red-100 p-3 text-sm text-red-700">
+            {authError}
           </div>
-
-          {isSignup ? (
+        )}
+        
+        <form className="space-y-5" onSubmit={isSignup && step === 1 ? handleNextStep : handleSubmit}>
+          {(!isSignup || step === 1) && (
             <>
+              {isSignup && (
+                <>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Name</label>
+                    <input
+                      className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
+                      value={form.name}
+                      onChange={(event) => setForm({ ...form, name: event.target.value })}
+                      placeholder="Enter your full name"
+                    />
+                    {errors.name && <p className="mt-2 text-sm text-rose-500">{errors.name}</p>}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Age</label>
+                      <input
+                        type="number"
+                        min="1"
+                        className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
+                        value={form.age}
+                        onChange={(event) => setForm({ ...form, age: event.target.value })}
+                        placeholder="Age"
+                      />
+                      {errors.age && <p className="mt-2 text-sm text-rose-500">{errors.age}</p>}
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Sex</label>
+                      <select
+                        className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none bg-transparent dark:text-white"
+                        value={form.sex}
+                        onChange={(event) => setForm({ ...form, sex: event.target.value })}
+                      >
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Phone</label>
+                      <input
+                        className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
+                        value={form.phone}
+                        onChange={(event) => setForm({ ...form, phone: event.target.value })}
+                        placeholder="Phone Number"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Blood Group</label>
+                      <select
+                        className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none bg-transparent dark:text-white"
+                        value={form.bloodGroup}
+                        onChange={(event) => setForm({ ...form, bloodGroup: event.target.value })}
+                      >
+                        <option value="A+">A+</option>
+                        <option value="B+">B+</option>
+                        <option value="O+">O+</option>
+                        <option value="AB+">AB+</option>
+                        <option value="A-">A-</option>
+                        <option value="B-">B-</option>
+                        <option value="O-">O-</option>
+                        <option value="AB-">AB-</option>
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
+
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Name</label>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Email address</label>
                 <input
+                  type="email"
                   className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
-                  value={form.name}
-                  onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                  placeholder="Enter your full name"
+                  value={form.email}
+                  onChange={(event) => setForm({ ...form, email: event.target.value })}
+                  placeholder="name@example.com"
                 />
-                {errors.name ? <p className="mt-2 text-sm text-rose-500">{errors.name}</p> : null}
+                {errors.email && <p className="mt-2 text-sm text-rose-500">{errors.email}</p>}
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Age</label>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Password</label>
                 <input
-                  type="number"
-                  min="1"
+                  type="password"
                   className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
-                  value={form.age}
-                  onChange={(event) => setForm((current) => ({ ...current, age: event.target.value }))}
-                  placeholder="Enter age"
+                  value={form.password}
+                  onChange={(event) => setForm({ ...form, password: event.target.value })}
+                  placeholder="Enter a secure password"
                 />
-                {errors.age ? <p className="mt-2 text-sm text-rose-500">{errors.age}</p> : null}
+                {errors.password && <p className="mt-2 text-sm text-rose-500">{errors.password}</p>}
               </div>
             </>
-          ) : null}
+          )}
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Email address</label>
-            <input
-              className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
-              value={form.email}
-              onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-              placeholder="name@example.com"
-            />
-            {errors.email ? <p className="mt-2 text-sm text-rose-500">{errors.email}</p> : null}
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Password</label>
-            <input
-              type="password"
-              className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
-              value={form.password}
-              onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-              placeholder="Enter a secure password"
-            />
-            {errors.password ? <p className="mt-2 text-sm text-rose-500">{errors.password}</p> : null}
-          </div>
-
-          {isSignup ? (
+          {isSignup && step === 2 && (
             <>
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Past Diseases</label>
-                <textarea
-                  rows="4"
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Allergies (comma separated)</label>
+                <input
                   className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
-                  value={form.pastDiseases}
-                  onChange={(event) => setForm((current) => ({ ...current, pastDiseases: event.target.value }))}
-                  placeholder={"One per line\nHypertension\nAsthma"}
+                  value={form.allergies}
+                  onChange={(event) => setForm({ ...form, allergies: event.target.value })}
+                  placeholder="E.g. Peanuts, Penicillin"
                 />
-                {errors.pastDiseases ? <p className="mt-2 text-sm text-rose-500">{errors.pastDiseases}</p> : null}
               </div>
-
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Ongoing Medicines</label>
-                <textarea
-                  rows="4"
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Current Diseases (comma separated)</label>
+                <input
                   className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
-                  value={form.ongoingMedicines}
-                  onChange={(event) => setForm((current) => ({ ...current, ongoingMedicines: event.target.value }))}
-                  placeholder={"One per line\nWarfarin 5mg\nMetoprolol 25mg"}
+                  value={form.currentDiseases}
+                  onChange={(event) => setForm({ ...form, currentDiseases: event.target.value })}
+                  placeholder="E.g. Type 2 Diabetes, Hypertension"
                 />
-                {errors.ongoingMedicines ? <p className="mt-2 text-sm text-rose-500">{errors.ongoingMedicines}</p> : null}
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Current Medications (comma separated)</label>
+                <input
+                  className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
+                  value={form.currentMedications}
+                  onChange={(event) => setForm({ ...form, currentMedications: event.target.value })}
+                  placeholder="E.g. Metformin, Lisinopril"
+                />
+              </div>
+              
+              <div className="flex gap-4">
+                <Button type="button" className="w-1/3 bg-slate-200 text-slate-800 hover:bg-slate-300" onClick={() => setStep(1)}>
+                  Back
+                </Button>
+                <Button className="w-2/3" disabled={loading}>
+                  {loading ? "Registering..." : "Complete Registration"}
+                </Button>
               </div>
             </>
-          ) : null}
+          )}
 
-          <Button className="w-full">{isSignup ? "Create account" : "Login"}</Button>
+          {(!isSignup || step === 1) && (
+            <Button className="w-full" disabled={loading}>
+              {loading ? "Processing..." : isSignup ? "Next Step" : "Login"}
+            </Button>
+          )}
         </form>
 
         <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">

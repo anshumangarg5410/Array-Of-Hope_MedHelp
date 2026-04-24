@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const Patient = require('../models/Patient');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -11,7 +11,7 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: "Name, email, and password are required" });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await Patient.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: "User already exists with this email" });
     }
@@ -19,7 +19,7 @@ exports.register = async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const newUser = new User({
+    const newUser = new Patient({
       name,
       email,
       password: hashedPassword,
@@ -38,7 +38,7 @@ exports.register = async (req, res) => {
 
   } catch (error) {
     console.error("Registration error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error", details: error.message, stack: error.stack });
   }
 };
 
@@ -51,7 +51,7 @@ exports.login = async (req, res) => {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await Patient.findOne({ email });
     if (!user) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
