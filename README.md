@@ -23,10 +23,10 @@ A centralized ecosystem connecting patients, doctors, and pharmacies that offers
 ## 🚀 Product Development TODO List
 
 ### Phase 1: Project Foundation & Authentication
-- [ ] **Basic Setup**
-  - [ ] Initialize Express.js backend and React/Next.js frontend.
-  - [ ] Setup MongoDB connection and database schemas.
-  - [ ] Configure environment variables and basic middlewares (CORS, error handling).
+- [/] **Basic Setup**
+  - [/] Initialize Express.js backend and React/Next.js frontend. (Backend done)
+  - [x] Setup MongoDB connection and database schemas.
+  - [x] Configure environment variables and basic middlewares (CORS, error handling).
 - [ ] **User Management & Auth**
   - [ ] Implement JWT-based Authentication.
   - [ ] Role-based access control (Patients, Doctors, Admin).
@@ -34,7 +34,7 @@ A centralized ecosystem connecting patients, doctors, and pharmacies that offers
 
 ### Phase 2: Core Healthcare Modules
 - [ ] **Electronic Health Records (EHR)**
-  - [ ] Digital storage of patient demographics, past history, and current medications.
+  - [x] Digital storage of patient demographics, past history, and current medications.
   - [ ] CRUD operations for patient medical records (accessible by authorized doctors).
 - [ ] **Communication System**
   - [ ] Secure, real-time doctor-patient chat interface (using WebSockets/Socket.io).
@@ -48,9 +48,9 @@ A centralized ecosystem connecting patients, doctors, and pharmacies that offers
   - [ ] Integrate an AI agent into the doctor's prescription interface.
   - [ ] AI reads patient demographics, complaints, past history, and current meds.
   - [ ] Generate real-time alerts for doctors regarding overlapping medications or contraindications.
-- [ ] **AI Health Assistant (Patient Chatbot)**
-  - [ ] 24/7 Chatbot for patients to get basic guidance and symptom detection.
-  - [ ] Triage system to suggest next steps or connect to a human doctor.
+- [/] **AI Health Assistant (Patient Chatbot)**
+  - [x] 24/7 Chatbot for patients to get basic guidance and symptom detection.
+  - [/] Triage system to suggest next steps or connect to a human doctor.
 - [ ] **AI Non-Pharma Suggestions**
   - [ ] Feature allowing AI to analyze the prescription and recommend non-pharmaceutical products or lifestyle changes alongside standard meds.
 

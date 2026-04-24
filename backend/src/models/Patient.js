@@ -74,13 +74,12 @@ const patientSchema = new mongoose.Schema({
 });
 
 // Pre-save hook to automatically calculate and set ageCategory based on age
-patientSchema.pre('save', function(next) {
+patientSchema.pre('save', function() {
   if (this.age) {
     if (this.age <= 17) this.ageCategory = 'Child';
     else if (this.age <= 59) this.ageCategory = 'Adult';
     else this.ageCategory = 'Geriatric';
   }
-  next();
 });
 
 module.exports = mongoose.model('Patient', patientSchema);

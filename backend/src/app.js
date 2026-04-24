@@ -15,5 +15,6 @@ app.get('/', (req, res) => {
 // Mount routes
 app.use('/api/patients', require('./routes/patientRoutes'));
 app.use('/api/doctors', require('./routes/doctorRoutes'));
+app.use('/api/chat', require('./routes/chatRoutes'));
 
 module.exports = app;
