@@ -94,6 +94,21 @@ export const doctorSeedMessages = [
   },
 ];
 
+export const patientPortalMessages = [
+  {
+    id: 1,
+    sender: "doctor",
+    text: "Hello from MedHelp care. I reviewed your latest medicines and left a note about the severe interaction.",
+    time: "09:50 AM",
+  },
+  {
+    id: 2,
+    sender: "patient",
+    text: "Thank you. I want to add my older prescription and confirm what I should continue.",
+    time: "09:54 AM",
+  },
+];
+
 export const historyTimeline = [
   {
     id: 1,
@@ -175,4 +190,24 @@ export const doctorPatientDetails = {
     vitals: ["Temp 98.4F", "Pulse 84", "Pain level 5/10"],
     notes: "Potential duplicate pain medication documented in uploaded prescription.",
   },
+};
+
+export const defaultHealthProfile = {
+  age: 29,
+  pastDiseases: ["Migraine", "Seasonal allergies"],
+  ongoingMedicines: ["Warfarin 5mg", "Vitamin D weekly", "Metoprolol 25mg"],
+  pastPrescriptions: [
+    {
+      id: 1,
+      title: "Cardiology review",
+      date: "April 21, 2026",
+      items: ["Warfarin 5mg", "Metoprolol 25mg", "Ibuprofen 400mg"],
+    },
+    {
+      id: 2,
+      title: "General physician follow-up",
+      date: "March 11, 2026",
+      items: ["Amoxicillin 500mg", "Paracetamol 650mg"],
+    },
+  ],
 };

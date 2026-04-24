@@ -15,13 +15,17 @@ export default function AuthPage() {
     name: role === "doctor" ? "Dr. Alex Morgan" : "Ria Patel",
     email: role === "doctor" ? "doctor@careflow.ai" : "patient@careflow.ai",
     password: "",
+    age: "",
+    pastDiseases: "",
+    ongoingMedicines: "",
   });
+  const [errors, setErrors] = useState({});
 
   const pageCopy = useMemo(
     () => ({
       title: isSignup ? "Create your secure workspace" : "Welcome back to medication safety",
       body: isSignup
-        ? "Set up your role-based account and continue to the live product demo."
+        ? "Set up your MedHelp account and continue to the live product demo."
         : "Sign in to access your dashboard, prescription workflows, and messaging tools.",
     }),
     [isSignup],
@@ -29,7 +33,54 @@ export default function AuthPage() {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    login({ role, name: form.name, email: form.email });
+    const nextErrors = {};
+
+    if (!form.email.trim()) {
+      nextErrors.email = "Email is required.";
+    }
+
+    if (!form.password.trim()) {
+      nextErrors.password = "Password is required.";
+    }
+
+    if (isSignup) {
+      if (!form.name.trim()) {
+        nextErrors.name = "Name is required.";
+      }
+
+      if (!form.age || Number(form.age) <= 0) {
+        nextErrors.age = "Age must be a valid number.";
+      }
+
+      if (!form.pastDiseases.trim()) {
+        nextErrors.pastDiseases = "Add past diseases or write None.";
+      }
+
+      if (!form.ongoingMedicines.trim()) {
+        nextErrors.ongoingMedicines = "Add ongoing medicines or write None.";
+      }
+    }
+
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length) {
+      return;
+    }
+
+    login({
+      role,
+      name: form.name,
+      email: form.email,
+      age: Number(form.age) || undefined,
+      pastDiseases: form.pastDiseases
+        .split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean),
+      ongoingMedicines: form.ongoingMedicines
+        .split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    });
     navigate(role === "doctor" ? "/doctor/dashboard" : "/patient/dashboard");
   };
 
@@ -62,15 +113,31 @@ export default function AuthPage() {
           </div>
 
           {isSignup ? (
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Full name</label>
-              <input
-                className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
-                value={form.name}
-                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                placeholder="Enter your full name"
-              />
-            </div>
+            <>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Name</label>
+                <input
+                  className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
+                  value={form.name}
+                  onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                  placeholder="Enter your full name"
+                />
+                {errors.name ? <p className="mt-2 text-sm text-rose-500">{errors.name}</p> : null}
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Age</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
+                  value={form.age}
+                  onChange={(event) => setForm((current) => ({ ...current, age: event.target.value }))}
+                  placeholder="Enter age"
+                />
+                {errors.age ? <p className="mt-2 text-sm text-rose-500">{errors.age}</p> : null}
+              </div>
+            </>
           ) : null}
 
           <div>
@@ -81,6 +148,7 @@ export default function AuthPage() {
               onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
               placeholder="name@example.com"
             />
+            {errors.email ? <p className="mt-2 text-sm text-rose-500">{errors.email}</p> : null}
           </div>
 
           <div>
@@ -92,7 +160,36 @@ export default function AuthPage() {
               onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
               placeholder="Enter a secure password"
             />
+            {errors.password ? <p className="mt-2 text-sm text-rose-500">{errors.password}</p> : null}
           </div>
+
+          {isSignup ? (
+            <>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Past Diseases</label>
+                <textarea
+                  rows="4"
+                  className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
+                  value={form.pastDiseases}
+                  onChange={(event) => setForm((current) => ({ ...current, pastDiseases: event.target.value }))}
+                  placeholder={"One per line\nHypertension\nAsthma"}
+                />
+                {errors.pastDiseases ? <p className="mt-2 text-sm text-rose-500">{errors.pastDiseases}</p> : null}
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">Ongoing Medicines</label>
+                <textarea
+                  rows="4"
+                  className="glass-panel w-full rounded-2xl border-0 px-4 py-4 text-sm outline-none placeholder:text-slate-400 dark:text-white"
+                  value={form.ongoingMedicines}
+                  onChange={(event) => setForm((current) => ({ ...current, ongoingMedicines: event.target.value }))}
+                  placeholder={"One per line\nWarfarin 5mg\nMetoprolol 25mg"}
+                />
+                {errors.ongoingMedicines ? <p className="mt-2 text-sm text-rose-500">{errors.ongoingMedicines}</p> : null}
+              </div>
+            </>
+          ) : null}
 
           <Button className="w-full">{isSignup ? "Create account" : "Login"}</Button>
         </form>

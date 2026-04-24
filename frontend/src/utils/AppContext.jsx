@@ -2,11 +2,13 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { simulateAiReply, simulateInteractionCheck, simulatePrescriptionProcessing } from "./mockApi";
 import {
   aiSeedMessages,
+  defaultHealthProfile,
   doctorSeedMessages,
   extractedMedicines,
   historyTimeline,
   interactions,
   patientList,
+  patientPortalMessages,
 } from "./mockData";
 import { readStorage, storageKeys, writeStorage } from "./storage";
 
@@ -42,6 +44,12 @@ export function AppProvider({ children }) {
   const [doctorMessages, setDoctorMessages] = useState(() =>
     readStorage(storageKeys.doctorChat, doctorSeedMessages),
   );
+  const [patientPortalMessagesState, setPatientPortalMessagesState] = useState(() =>
+    readStorage(storageKeys.patientPortalChat, patientPortalMessages),
+  );
+  const [healthProfile, setHealthProfile] = useState(() =>
+    readStorage(storageKeys.healthProfile, defaultHealthProfile),
+  );
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -64,13 +72,33 @@ export function AppProvider({ children }) {
     writeStorage(storageKeys.doctorChat, doctorMessages);
   }, [doctorMessages]);
 
-  const login = ({ role, name, email }) => {
+  useEffect(() => {
+    writeStorage(storageKeys.patientPortalChat, patientPortalMessagesState);
+  }, [patientPortalMessagesState]);
+
+  useEffect(() => {
+    writeStorage(storageKeys.healthProfile, healthProfile);
+  }, [healthProfile]);
+
+  const login = ({ role, name, email, age, pastDiseases, ongoingMedicines }) => {
     setSession({
       role,
       name: name || (role === "doctor" ? "Dr. Alex Morgan" : "Ria Patel"),
       email,
+      age: age || defaultHealthProfile.age,
+      pastDiseases: pastDiseases || defaultHealthProfile.pastDiseases,
+      ongoingMedicines: ongoingMedicines || defaultHealthProfile.ongoingMedicines,
       isAuthenticated: true,
     });
+
+    if (role === "patient") {
+      setHealthProfile((current) => ({
+        ...current,
+        age: age || current.age,
+        pastDiseases: pastDiseases?.length ? pastDiseases : current.pastDiseases,
+        ongoingMedicines: ongoingMedicines?.length ? ongoingMedicines : current.ongoingMedicines,
+      }));
+    }
   };
 
   const logout = () => {
@@ -148,6 +176,60 @@ export function AppProvider({ children }) {
     }
   };
 
+  const sendPatientPortalMessage = (message, sender = "patient") => {
+    const nextMessage = {
+      id: crypto.randomUUID(),
+      sender,
+      text: message,
+      time: makeTimeLabel(),
+    };
+
+    setPatientPortalMessagesState((current) => [...current, nextMessage]);
+
+    if (sender === "patient") {
+      window.setTimeout(() => {
+        setPatientPortalMessagesState((current) => [
+          ...current,
+          {
+            id: crypto.randomUUID(),
+            sender: "doctor",
+            text: "I received your update. Please upload the new prescription or add it manually so I can compare the medication list.",
+            time: makeTimeLabel(),
+          },
+        ]);
+      }, 1000);
+    }
+  };
+
+  const addManualPrescription = ({ title, medicines }) => {
+    const trimmedMedicines = medicines
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (!trimmedMedicines.length) {
+      return;
+    }
+
+    setHealthProfile((current) => ({
+      ...current,
+      pastPrescriptions: [
+        {
+          id: crypto.randomUUID(),
+          title: title || "Manual prescription entry",
+          date: new Date().toLocaleDateString([], {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+          items: trimmedMedicines,
+        },
+        ...current.pastPrescriptions,
+      ],
+      ongoingMedicines: Array.from(new Set([...trimmedMedicines, ...current.ongoingMedicines])),
+    }));
+  };
+
   const value = useMemo(
     () => ({
       theme,
@@ -161,10 +243,14 @@ export function AppProvider({ children }) {
       sendAiMessage,
       doctorMessages,
       sendDoctorMessage,
+      patientPortalMessages: patientPortalMessagesState,
+      sendPatientPortalMessage,
+      healthProfile,
+      addManualPrescription,
       historyTimeline,
       patientList,
     }),
-    [theme, session, uploadState, aiMessages, doctorMessages],
+    [theme, session, uploadState, aiMessages, doctorMessages, patientPortalMessagesState, healthProfile],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

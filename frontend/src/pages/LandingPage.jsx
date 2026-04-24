@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import Brand from "../components/Brand";
 import Button from "../components/Button";
 import Card from "../components/Card";
 import SectionHeading from "../components/SectionHeading";
@@ -17,6 +18,9 @@ export default function LandingPage() {
     <div>
       <section className="section-shell grid min-h-[88vh] items-center gap-10 py-16 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="animate-slideUp">
+          <div className="mb-5">
+            <Brand showTagline={false} />
+          </div>
           <span className="inline-flex rounded-full border border-white/50 bg-white/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-600 shadow-soft dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
             Smart Prescription Safety
           </span>
@@ -24,7 +28,7 @@ export default function LandingPage() {
             Smart Prescription Safety <span className="text-gradient">& Health Insights</span>
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">
-            A modern care layer for patients and doctors to scan prescriptions, understand medication risks, and stay aligned through guided health conversations.
+            MedHelp gives patients and doctors a modern care layer to scan prescriptions, understand medication risks, and stay aligned through guided health conversations.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Link to="/auth/login?role=patient">

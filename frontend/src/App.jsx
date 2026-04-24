@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
+import Footer from "./components/Footer";
+import FloatingChatbot from "./components/FloatingChatbot";
 import { useAppContext } from "./utils/AppContext";
 import LandingPage from "./pages/LandingPage";
 import RoleSelectionPage from "./pages/RoleSelectionPage";
@@ -63,54 +65,61 @@ function ScrollToTop() {
 }
 
 export default function App() {
+  const location = useLocation();
+  const hideGlobalChrome = location.pathname === "/auth/login" || location.pathname === "/auth/signup";
+
   return (
     <div className="relative min-h-screen overflow-hidden text-slate-900 dark:text-slate-100">
       <div className="pointer-events-none absolute inset-0 bg-aurora opacity-80" />
       <div className="pointer-events-none absolute left-1/2 top-20 h-72 w-72 -translate-x-1/2 rounded-full bg-sky-300/20 blur-3xl dark:bg-sky-400/10" />
-      <div className="relative z-10">
+      <div className="relative z-10 flex min-h-screen flex-col">
         <Navbar />
         <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/auth/role" element={<RoleSelectionPage />} />
-          <Route path="/auth/:mode" element={<AuthPage />} />
+        <div className="flex-1">
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/auth/role" element={<RoleSelectionPage />} />
+            <Route path="/auth/:mode" element={<AuthPage />} />
 
-          <Route element={<ProtectedRoute role="patient" />}>
-            <Route
-              element={
-                <DashboardLayout
-                  role="patient"
-                  title="Patient hub"
-                  subtitle="Manage prescriptions, interaction checks, and personalized care guidance."
-                  items={patientNav}
-                />
-              }
-            >
-              <Route path="/patient/dashboard" element={<PatientDashboardPage />} />
-              <Route path="/patient/upload" element={<PrescriptionUploadPage />} />
-              <Route path="/patient/results" element={<InteractionResultsPage />} />
-              <Route path="/patient/chat" element={<ChatPage />} />
-              <Route path="/patient/history" element={<MedicalHistoryPage />} />
+            <Route element={<ProtectedRoute role="patient" />}>
+              <Route
+                element={
+                  <DashboardLayout
+                    role="patient"
+                    title="Patient hub"
+                    subtitle="Manage prescriptions, interaction checks, and personalized care guidance."
+                    items={patientNav}
+                  />
+                }
+              >
+                <Route path="/patient/dashboard" element={<PatientDashboardPage />} />
+                <Route path="/patient/upload" element={<PrescriptionUploadPage />} />
+                <Route path="/patient/results" element={<InteractionResultsPage />} />
+                <Route path="/patient/chat" element={<ChatPage />} />
+                <Route path="/patient/history" element={<MedicalHistoryPage />} />
+              </Route>
             </Route>
-          </Route>
 
-          <Route element={<ProtectedRoute role="doctor" />}>
-            <Route
-              element={
-                <DashboardLayout
-                  role="doctor"
-                  title="Doctor hub"
-                  subtitle="Review patient uploads, track flagged interactions, and keep communication streamlined."
-                  items={doctorNav}
-                />
-              }
-            >
-              <Route path="/doctor/dashboard" element={<DoctorDashboardPage />} />
+            <Route element={<ProtectedRoute role="doctor" />}>
+              <Route
+                element={
+                  <DashboardLayout
+                    role="doctor"
+                    title="Doctor hub"
+                    subtitle="Review patient uploads, track flagged interactions, and keep communication streamlined."
+                    items={doctorNav}
+                  />
+                }
+              >
+                <Route path="/doctor/dashboard" element={<DoctorDashboardPage />} />
+              </Route>
             </Route>
-          </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+        {!hideGlobalChrome ? <Footer /> : null}
+        {!hideGlobalChrome ? <FloatingChatbot /> : null}
       </div>
     </div>
   );

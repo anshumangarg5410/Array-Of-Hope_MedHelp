@@ -4,6 +4,8 @@ export const storageKeys = {
   upload: "mic-upload",
   aiChat: "mic-ai-chat",
   doctorChat: "mic-doctor-chat",
+  patientPortalChat: "mic-patient-portal-chat",
+  healthProfile: "mic-health-profile",
 };
 
 export function readStorage(key, fallback) {
