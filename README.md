@@ -39,15 +39,15 @@ A centralized ecosystem connecting patients, doctors, and pharmacies that offers
 - [ ] **Communication System**
   - [ ] Secure, real-time doctor-patient chat interface (using WebSockets/Socket.io).
   - [ ] Appointment scheduling and virtual consultation routing.
-- [ ] **Prescription Management**
+- [/] **Prescription Management**
   - [ ] Digital prescription creation by doctors.
-  - [ ] Prescription validation and tracking system.
+  - [x] Prescription validation and tracking system. (AI backend logic complete)
 
 ### Phase 3: AI Agents & Smart Integrations
-- [ ] **AI Prescription Assistant (Real-time)**
-  - [ ] Integrate an AI agent into the doctor's prescription interface.
-  - [ ] AI reads patient demographics, complaints, past history, and current meds.
-  - [ ] Generate real-time alerts for doctors regarding overlapping medications or contraindications.
+- [/] **AI Prescription Assistant (Real-time)**
+  - [x] Integrate an AI agent into the doctor's prescription interface. (Backend endpoint done)
+  - [/] AI reads patient demographics, complaints, past history, and current meds.
+  - [x] Generate real-time alerts for doctors regarding overlapping medications or contraindications.
 - [/] **AI Health Assistant (Patient Chatbot)**
   - [x] 24/7 Chatbot for patients to get basic guidance and symptom detection.
   - [/] Triage system to suggest next steps or connect to a human doctor.

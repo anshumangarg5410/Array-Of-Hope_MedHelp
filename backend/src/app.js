@@ -16,5 +16,7 @@ app.get('/', (req, res) => {
 app.use('/api/patients', require('./routes/patientRoutes'));
 app.use('/api/doctors', require('./routes/doctorRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api/prescription', require('./routes/prescriptionRoutes'));
+app.use('/api/auth', require('./routes/authRoutes'));
 
 module.exports = app;

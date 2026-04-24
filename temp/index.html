@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Healthcare Backend Tester</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 900px; margin: auto; }
+        h1 { text-align: center; color: #2c3e50; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        button { background-color: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        button:hover { background-color: #2980b9; }
+        pre { background: #eee; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+        .flex { display: flex; gap: 10px; margin-bottom: 15px; }
+        input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .badge { display: inline-block; padding: 5px 10px; border-radius: 15px; font-weight: bold; font-size: 12px; }
+        .badge.Low { background-color: #2ecc71; color: white; }
+        .badge.Moderate { background-color: #f1c40f; color: white; }
+        .badge.High { background-color: #e74c3c; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 Backend API Tester</h1>
+        
+        <div class="card">
+            <h2>1. Patients Database</h2>
+            <button onclick="fetchPatients()">Load Patients</button>
+            <pre id="patientsOutput">Click 'Load Patients' to fetch data from /api/patients</pre>
+        </div>
+
+        <div class="card">
+            <h2>2. Doctors Database</h2>
+            <button onclick="fetchDoctors()">Load Doctors</button>
+            <pre id="doctorsOutput">Click 'Load Doctors' to fetch data from /api/doctors</pre>
+        </div>
+
+        <div class="card">
+            <h2>3. AI Chatbot Simulator</h2>
+            <p style="font-size: 13px; color: #666;">Use the Patient ID from the database above (e.g., Rahul Sharma's ID)</p>
+            <div class="flex">
+                <input type="text" id="patientId" placeholder="Patient ID (e.g. 69eb40...)">
+            </div>
+            <div class="flex">
+                <input type="text" id="chatMessage" placeholder="Ask a medical question...">
+                <button onclick="sendChat()">Send to AI</button>
+            </div>
+            <div id="chatResult" style="display:none; background: #e8f4f8; padding: 15px; border-left: 4px solid #3498db; margin-top: 15px;">
+                <strong>AI Response:</strong> <span id="chatReply"></span><br><br>
+                <strong>Risk Level:</strong> <span id="chatRisk" class="badge"></span>
+            </div>
+            <pre id="chatError" style="display:none; color: red;"></pre>
+        </div>
+
+        <div class="card">
+            <h2>4. AI Prescription Validator</h2>
+            <p style="font-size: 13px; color: #666;">Validates a hardcoded demo prescription for the patient ID above.</p>
+            <button onclick="validatePrescription()">Validate Demo Prescription</button>
+            <div id="prescriptionResult" style="display:none; margin-top: 15px;">
+                <strong>Safety Status:</strong> <span id="prescriptionSafe" class="badge"></span><br><br>
+                <strong>Explanation:</strong> <span id="prescriptionExplanation"></span><br><br>
+                <strong>Issues Found:</strong>
+                <pre id="prescriptionIssues"></pre>
+            </div>
+            <pre id="prescriptionError" style="display:none; color: red;"></pre>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001/api';
+
+        async function fetchPatients() {
+            try {
+                const res = await fetch(`${API_BASE}/patients`);
+                const data = await res.json();
+                document.getElementById('patientsOutput').textContent = JSON.stringify(data, null, 2);
+                if(data.length > 0 && !document.getElementById('patientId').value) {
+                    document.getElementById('patientId').value = data[0]._id; // auto-fill first patient id
+                }
+            } catch (error) {
+                document.getElementById('patientsOutput').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function fetchDoctors() {
+            try {
+                const res = await fetch(`${API_BASE}/doctors`);
+                const data = await res.json();
+                document.getElementById('doctorsOutput').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('doctorsOutput').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function sendChat() {
+            const patientId = document.getElementById('patientId').value;
+            const message = document.getElementById('chatMessage').value;
+            const chatResult = document.getElementById('chatResult');
+            const chatError = document.getElementById('chatError');
+            
+            chatResult.style.display = 'none';
+            chatError.style.display = 'none';
+
+            if(!patientId || !message) {
+                chatError.textContent = "Please provide both Patient ID and Message";
+                chatError.style.display = 'block';
+                return;
+            }
+
+            try {
+                document.getElementById('chatMessage').value = 'Sending...';
+                const res = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ patientId, message })
+                });
+                const data = await res.json();
+                document.getElementById('chatMessage').value = '';
+
+                if (res.ok) {
+                    chatResult.style.display = 'block';
+                    document.getElementById('chatReply').textContent = data.reply;
+                    
+                    const riskBadge = document.getElementById('chatRisk');
+                    riskBadge.textContent = data.riskLevel;
+                    riskBadge.className = `badge ${data.riskLevel}`;
+                } else {
+                    chatError.textContent = 'API Error: ' + (data.error?.message || data.error || JSON.stringify(data));
+                    chatError.style.display = 'block';
+                }
+            } catch (error) {
+                document.getElementById('chatMessage').value = '';
+                chatError.textContent = 'Network Error: ' + error.message;
+                chatError.style.display = 'block';
+            }
+        }
+
+        async function validatePrescription() {
+            const patientId = document.getElementById('patientId').value;
+            const resultDiv = document.getElementById('prescriptionResult');
+            const errorDiv = document.getElementById('prescriptionError');
+            
+            resultDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+
+            if(!patientId) {
+                errorDiv.textContent = "Please provide a Patient ID in the section above.";
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/prescription/check`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ patientId })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    resultDiv.style.display = 'block';
+                    
+                    const safeBadge = document.getElementById('prescriptionSafe');
+                    if (data.isSafe) {
+                        safeBadge.textContent = "SAFE";
+                        safeBadge.className = "badge Low";
+                    } else {
+                        safeBadge.textContent = "UNSAFE";
+                        safeBadge.className = "badge High";
+                    }
+                    
+                    document.getElementById('prescriptionExplanation').textContent = data.explanation;
+                    document.getElementById('prescriptionIssues').textContent = JSON.stringify(data.issues, null, 2);
+                } else {
+                    errorDiv.textContent = 'API Error: ' + (data.error?.message || data.error || JSON.stringify(data));
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Network Error: ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
