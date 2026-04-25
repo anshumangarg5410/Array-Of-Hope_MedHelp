@@ -136,15 +136,31 @@ export function AppProvider({ children }) {
 
     setAiMessages((current) => [...current, nextUserMessage]);
 
-    const reply = await simulateAiReply(message);
-    const nextAssistantMessage = {
-      id: crypto.randomUUID(),
-      sender: "assistant",
-      text: reply,
-      time: makeTimeLabel(),
-    };
+    try {
+      if (!session.userId) throw new Error("Must be logged in to chat");
+      
+      const result = await api.sendChatMessage(session.userId, message);
+      
+      const nextAssistantMessage = {
+        id: crypto.randomUUID(),
+        sender: "assistant",
+        text: result.reply,
+        time: makeTimeLabel(),
+      };
 
-    setAiMessages((current) => [...current, nextAssistantMessage]);
+      setAiMessages((current) => [...current, nextAssistantMessage]);
+    } catch (error) {
+      console.error("AI Chat Error:", error);
+      setAiMessages((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          sender: "assistant",
+          text: "Sorry, I am having trouble connecting to the server right now. Please try again later.",
+          time: makeTimeLabel(),
+        },
+      ]);
+    }
   };
 
   const sendDoctorMessage = (message, sender = "patient") => {

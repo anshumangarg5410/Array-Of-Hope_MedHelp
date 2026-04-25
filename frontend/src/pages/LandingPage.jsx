@@ -4,6 +4,7 @@ import Button from "../components/Button";
 import Card from "../components/Card";
 import SectionHeading from "../components/SectionHeading";
 import { featureCards } from "../utils/mockData";
+import { useAppContext } from "../utils/AppContext";
 
 const storySteps = [
   "Upload prescription",
@@ -14,6 +15,8 @@ const storySteps = [
 ];
 
 export default function LandingPage() {
+  const { session } = useAppContext();
+  
   return (
     <div>
       <section className="section-shell grid min-h-[88vh] items-center gap-10 py-16 lg:grid-cols-[1.05fr_0.95fr]">
@@ -31,14 +34,22 @@ export default function LandingPage() {
             MedHelp gives patients and doctors a modern care layer to scan prescriptions, understand medication risks, and stay aligned through guided health conversations.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
-            <Link to="/auth/login?role=patient">
-              <Button size="lg">Login</Button>
-            </Link>
-            <Link to="/auth/role">
-              <Button variant="secondary" size="lg">
-                Get Started
-              </Button>
-            </Link>
+            {session.isAuthenticated ? (
+              <Link to={session.role === "doctor" ? "/doctor/dashboard" : "/patient/dashboard"}>
+                <Button size="lg">Go to Dashboard</Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/auth/login?role=patient">
+                  <Button size="lg">Login</Button>
+                </Link>
+                <Link to="/auth/role">
+                  <Button variant="secondary" size="lg">
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
           <div className="mt-10 flex flex-wrap gap-3">
             {storySteps.map((step, index) => (

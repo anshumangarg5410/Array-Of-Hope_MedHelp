@@ -76,4 +76,31 @@ export const api = {
     }
     return response.json();
   },
+
+  addPrescription: async (data) => {
+    const response = await fetch(`${API_BASE}/patients/me/prescriptions`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to add prescription");
+    }
+    return response.json();
+  },
+
+  // ---------------- CHAT ---------------- //
+  sendChatMessage: async (patientId, message) => {
+    const response = await fetch(`${API_BASE}/chat`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ patientId, message }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to send message to AI");
+    }
+    return response.json();
+  },
 };

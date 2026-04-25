@@ -19,7 +19,7 @@ const patientNav = [
   { to: "/patient/dashboard", label: "Overview", shortcut: "01" },
   { to: "/patient/upload", label: "Upload & OCR", shortcut: "02" },
   { to: "/patient/results", label: "Interactions", shortcut: "03" },
-  { to: "/patient/chat", label: "AI + Doctor Chat", shortcut: "04" },
+  { to: "/patient/chat", label: "AI Assistant", shortcut: "04" },
   { to: "/patient/history", label: "Medical History", shortcut: "05" },
 ];
 

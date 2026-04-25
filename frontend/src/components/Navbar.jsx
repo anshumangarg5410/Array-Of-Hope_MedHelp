@@ -1,11 +1,17 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import Button from "./Button";
 import ThemeToggle from "./ThemeToggle";
 import { useAppContext } from "../utils/AppContext";
 import Brand from "./Brand";
 
 export default function Navbar() {
-  const { session } = useAppContext();
+  const { session, logout } = useAppContext();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/30 bg-white/40 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/30">
@@ -36,9 +42,14 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <ThemeToggle />
           {session.isAuthenticated ? (
-            <Link to={session.role === "doctor" ? "/doctor/dashboard" : "/patient/dashboard"}>
-              <Button size="sm">Open app</Button>
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link to={session.role === "doctor" ? "/doctor/dashboard" : "/patient/dashboard"}>
+                <Button size="sm">Open app</Button>
+              </Link>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                Logout
+              </Button>
+            </div>
           ) : (
             <>
               <Link to="/auth/login?role=patient" className="hidden sm:block">

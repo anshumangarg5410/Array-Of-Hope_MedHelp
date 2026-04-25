@@ -10,7 +10,7 @@ module.exports = (req, res, next) => {
   try {
     // Check if token is in "Bearer <token>" format
     const tokenString = token.startsWith('Bearer ') ? token.split(' ')[1] : token;
-    
+
     const verified = jwt.verify(tokenString, process.env.JWT_SECRET);
     req.user = verified; // { userId, email }
     next();

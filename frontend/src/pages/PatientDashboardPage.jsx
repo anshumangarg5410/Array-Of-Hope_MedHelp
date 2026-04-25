@@ -29,26 +29,27 @@ export default function PatientDashboardPage() {
     medicines: "",
   });
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const data = await api.getProfile();
-        setProfile(data);
-        
-        // Auto-set the doseTab based on actual data
-        if (data.ageCategory === "Child") setDoseTab("kids");
-        if (data.ageCategory === "Adult") setDoseTab("adults");
-        if (data.ageCategory === "Geriatric") setDoseTab("geriatric");
+  const fetchProfile = async () => {
+    try {
+      const data = await api.getProfile();
+      setProfile(data);
+      
+      // Auto-set the doseTab based on actual data
+      if (data.ageCategory === "Child") setDoseTab("kids");
+      if (data.ageCategory === "Adult") setDoseTab("adults");
+      if (data.ageCategory === "Geriatric") setDoseTab("geriatric");
 
-        if (data.sex === "Male") setGender("men");
-        if (data.sex === "Female") setGender("women");
-        
-      } catch (err) {
-        console.error("Failed to fetch profile:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+      if (data.sex === "Male") setGender("men");
+      if (data.sex === "Female") setGender("women");
+      
+    } catch (err) {
+      console.error("Failed to fetch profile:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (session.isAuthenticated) {
       fetchProfile();
     }
@@ -63,14 +64,21 @@ export default function PatientDashboardPage() {
     return defaultSuggestions;
   }, []);
 
-  const handleManualPrescriptionSubmit = (event) => {
+  const handleManualPrescriptionSubmit = async (event) => {
     event.preventDefault();
-    addManualPrescription(manualPrescription);
-    setManualPrescription({
-      title: "",
-      medicines: "",
-    });
-    setPrescriptionModalOpen(false);
+    try {
+      await api.addPrescription(manualPrescription);
+      setManualPrescription({
+        title: "",
+        medicines: "",
+      });
+      setPrescriptionModalOpen(false);
+      // Instantly refresh the dashboard with new database data
+      await fetchProfile();
+    } catch (err) {
+      console.error("Failed to save prescription:", err);
+      alert("Failed to save prescription. Please try again.");
+    }
   };
 
   if (loading) {
@@ -230,7 +238,7 @@ export default function PatientDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+      <div className="grid gap-6">
         <Card className="p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -294,13 +302,7 @@ export default function PatientDashboardPage() {
           </div>
         </Card>
 
-        <ChatBox
-          title="Patient care chat"
-          subtitle="A simple dashboard chat for doctor follow-ups and prescription clarifications."
-          messages={patientPortalMessages}
-          onSend={(message) => sendPatientPortalMessage(message, "patient")}
-          placeholder="Ask about an old prescription or a medicine..."
-        />
+
       </div>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Care summary">

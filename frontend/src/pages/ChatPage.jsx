@@ -13,7 +13,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="grid gap-6 xl:grid-cols-2">
+    <div className="mx-auto max-w-3xl">
       <ChatBox
         title="AI Health Assistant"
         subtitle="Ask about symptoms, dose timing, and how to interpret the current medication alerts."
@@ -21,13 +21,6 @@ export default function ChatPage() {
         onSend={handleAiSend}
         placeholder="Ask about symptoms or medicine timing..."
         loading={loading}
-      />
-      <ChatBox
-        title="Doctor Chat"
-        subtitle="A calm async chat surface for care coordination and medication follow-up."
-        messages={doctorMessages}
-        onSend={(message) => sendDoctorMessage(message, "patient")}
-        placeholder="Send your doctor an update..."
       />
     </div>
   );

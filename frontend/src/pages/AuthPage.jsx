@@ -13,7 +13,7 @@ export default function AuthPage() {
   const isSignup = mode === "signup";
   const { login } = useAppContext();
   const navigate = useNavigate();
-  
+
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState("");
@@ -53,7 +53,7 @@ export default function AuthPage() {
 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
-    
+
     setStep(2);
   };
 
@@ -71,7 +71,7 @@ export default function AuthPage() {
     if (Object.keys(nextErrors).length) return;
 
     setLoading(true);
-    
+
     try {
       if (isSignup) {
         // Register flow
@@ -84,18 +84,18 @@ export default function AuthPage() {
           phone: form.phone,
           bloodGroup: form.bloodGroup,
           allergies: form.allergies.split(",").map(i => i.trim()).filter(Boolean),
-          currentDiseases: form.currentDiseases.split(",").map(i => i.trim()).filter(Boolean),
-          currentMedications: form.currentMedications.split(",").map(i => i.trim()).filter(Boolean),
+          currentDiseases: form.currentDiseases.split(",").map(i => i.trim()).filter(Boolean).map(disease => ({ diseaseName: disease, severity: 'Moderate', status: 'Ongoing' })),
+          currentMedications: form.currentMedications.split(",").map(i => i.trim()).filter(Boolean).map(medicine => ({ medicineName: medicine, dosage: 'Standard', frequency: 'Daily' })),
         };
-        
+
         await api.register(payload);
-        
+
         // Auto-login after register
         const loginData = await api.login({ email: form.email, password: form.password });
         writeStorage(storageKeys.token, loginData.token);
         login({ role, name: loginData.user.name, email: loginData.user.email, userId: loginData.user._id });
         navigate(role === "doctor" ? "/doctor/dashboard" : "/patient/dashboard");
-        
+
       } else {
         // Login flow
         const loginData = await api.login({ email: form.email, password: form.password });
@@ -128,7 +128,7 @@ export default function AuthPage() {
             {authError}
           </div>
         )}
-        
+
         <form className="space-y-5" onSubmit={isSignup && step === 1 ? handleNextStep : handleSubmit}>
           {(!isSignup || step === 1) && (
             <>
@@ -256,7 +256,7 @@ export default function AuthPage() {
                   placeholder="E.g. Metformin, Lisinopril"
                 />
               </div>
-              
+
               <div className="flex gap-4">
                 <Button type="button" className="w-1/3 bg-slate-200 text-slate-800 hover:bg-slate-300" onClick={() => setStep(1)}>
                   Back
