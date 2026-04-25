@@ -11,6 +11,7 @@ export default function PatientDashboardPage() {
   const {
     session,
     uploadState,
+    setUploadState,
     addManualPrescription,
     patientPortalMessages,
     sendPatientPortalMessage,
@@ -64,20 +65,39 @@ export default function PatientDashboardPage() {
     return defaultSuggestions;
   }, []);
 
+  const [saving, setSaving] = useState(false);
+
   const handleManualPrescriptionSubmit = async (event) => {
     event.preventDefault();
+    setSaving(true);
     try {
-      await api.addPrescription(manualPrescription);
+      const response = await api.addPrescription(manualPrescription);
+      
+      // Update the global upload state so the dashboard "Latest Summary" updates
+      if (response.aiResult) {
+        setUploadState(prev => ({
+          ...prev,
+          interactions: response.aiResult,
+          lastCheckedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }));
+      }
+
       setManualPrescription({
         title: "",
         medicines: "",
       });
       setPrescriptionModalOpen(false);
+      
       // Instantly refresh the dashboard with new database data
       await fetchProfile();
+      
+      // If unsafe, scroll to the summary or show a toast? 
+      // For now, the "Latest Summary" card will update automatically.
     } catch (err) {
       console.error("Failed to save prescription:", err);
       alert("Failed to save prescription. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 

@@ -250,6 +250,7 @@ export function AppProvider({ children }) {
       login,
       logout,
       uploadState,
+      setUploadState,
       processUpload,
       aiMessages,
       sendAiMessage,
@@ -262,7 +263,7 @@ export function AppProvider({ children }) {
       historyTimeline,
       patientList,
     }),
-    [theme, session, uploadState, aiMessages, doctorMessages, patientPortalMessagesState, healthProfile],
+    [theme, session, uploadState, setUploadState, aiMessages, doctorMessages, patientPortalMessagesState, healthProfile],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

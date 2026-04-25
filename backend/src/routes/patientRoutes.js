@@ -17,6 +17,8 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
+const aiService = require('../services/aiService');
+
 // @route   POST /api/patients/me/prescriptions
 // @desc    Add a manual prescription to the patient's profile
 router.post('/me/prescriptions', authMiddleware, async (req, res) => {
@@ -45,10 +47,21 @@ router.post('/me/prescriptions', authMiddleware, async (req, res) => {
     const newPrescription = {
       doctorName: "Manual Entry",
       diagnosis: title || "Manual Prescription Entry",
-      medications: trimmedMedicines.map(med => ({ medicineName: med })),
+      medications: trimmedMedicines.map(med => ({ 
+        medicineName: med,
+        dosage: "As prescribed",
+        duration: "As prescribed"
+      })),
       issuedDate: new Date(),
     };
 
+    // 1. RUN AI VALIDATION
+    console.log("Running AI validation for manual entry...");
+    const aiResult = await aiService.validatePrescription(newPrescription);
+    console.log("AI Result:", aiResult.isSafe ? "SAFE" : "UNSAFE");
+
+    // 2. SAVE IF SAFE (Optional: decide if we save even if unsafe. User wants to see if it's correct.)
+    // For now, let's save it regardless but return the AI result so the UI can show the warning.
     patient.prescriptions.push(newPrescription);
     
     // Also push to currentMedications (avoiding exact duplicates)
@@ -59,16 +72,21 @@ router.post('/me/prescriptions', authMiddleware, async (req, res) => {
       if (!alreadyExists) {
         patient.currentMedications.push({ 
           medicineName: medName,
-          dosage: "As prescribed", // Default placeholder
-          frequency: "As prescribed" // Default placeholder
+          dosage: "As prescribed",
+          frequency: "As prescribed"
         });
       }
     });
 
     await patient.save();
 
-    res.json({ message: "Prescription added successfully", patient });
+    res.json({ 
+      message: "Prescription added successfully", 
+      patient,
+      aiResult // Return the AI result to the frontend
+    });
   } catch (error) {
+    console.error("Manual prescription error:", error);
     res.status(500).json({ error: "Server error", details: error.message });
   }
 });
