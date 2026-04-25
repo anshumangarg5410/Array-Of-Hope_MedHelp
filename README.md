@@ -7,7 +7,7 @@ A comprehensive, AI-driven digital healthcare platform designed to bridge the ga
 - **Backend (Render):** *Deployed as a Node.js Web Service on Render*
 
 **Demo Credentials (Patient Login):**
-- **Email:** `anshumangarg5410@gmail.com`
+- **Email:** `temp@gmail.com`
 - **Password:** `123456`
 
 ## Problem Statement
