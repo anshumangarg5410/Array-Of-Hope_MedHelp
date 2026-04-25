@@ -52,9 +52,16 @@ router.post('/me/prescriptions', authMiddleware, async (req, res) => {
     patient.prescriptions.push(newPrescription);
     
     // Also push to currentMedications (avoiding exact duplicates)
-    trimmedMedicines.forEach(med => {
-      if (!patient.currentMedications.includes(med)) {
-        patient.currentMedications.push(med);
+    trimmedMedicines.forEach(medName => {
+      const alreadyExists = patient.currentMedications.some(m => 
+        m.medicineName.toLowerCase() === medName.toLowerCase()
+      );
+      if (!alreadyExists) {
+        patient.currentMedications.push({ 
+          medicineName: medName,
+          dosage: "As prescribed", // Default placeholder
+          frequency: "As prescribed" // Default placeholder
+        });
       }
     });
 

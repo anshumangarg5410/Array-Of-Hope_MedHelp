@@ -11,16 +11,16 @@ const diseaseSchema = new mongoose.Schema({
 
 const currentMedicationSchema = new mongoose.Schema({
   medicineName: { type: String, required: true },
-  dosage: { type: String, required: true },
-  frequency: { type: String, required: true },
+  dosage: { type: String },
+  frequency: { type: String },
   startDate: { type: Date },
   prescribedBy: { type: String }
 });
 
 const prescriptionMedicationSchema = new mongoose.Schema({
   medicineName: { type: String, required: true },
-  dosage: { type: String, required: true },
-  duration: { type: String, required: true }
+  dosage: { type: String },
+  duration: { type: String }
 });
 
 const prescriptionSchema = new mongoose.Schema({
