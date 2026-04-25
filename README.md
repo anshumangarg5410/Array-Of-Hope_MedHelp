@@ -6,6 +6,10 @@ A comprehensive, AI-driven digital healthcare platform designed to bridge the ga
 - **Frontend (Vercel):** *Deployed via Vercel (URL configured via VITE_API_URL)*
 - **Backend (Render):** *Deployed as a Node.js Web Service on Render*
 
+**Demo Credentials (Patient Login):**
+- **Email:** `anshumangarg5410@gmail.com`
+- **Password:** `123456`
+
 ## Problem Statement
 Current healthcare systems often suffer from:
 - Lack of timely access to doctors and 24/7 guidance.
